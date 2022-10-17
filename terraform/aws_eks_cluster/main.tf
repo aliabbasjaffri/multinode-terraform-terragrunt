@@ -26,6 +26,28 @@ resource "aws_iam_role" "node_group_role" {
   })
 }
 
+resource "aws_iam_policy" "cluster_autoscaler_policy" {
+  name        = "cluster_autoscaler_policy"
+  description = "access to nodes to scale out and in"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Resource = "*"
+        Effect   = "Allow"
+        Action = [
+          "autoscaling:DescribeTags",
+          "autoscaling:SetDesiredCapacity",
+          "autoscaling:DescribeAutoScalingGroups",
+          "autoscaling:DescribeLaunchConfigurations",
+          "autoscaling:DescribeAutoScalingInstances",
+          "autoscaling:TerminateInstanceInAutoScalingGroup"
+        ]
+      },
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEKSClusterPolicy" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
   role       = aws_iam_role.eks_role.name
@@ -51,21 +73,61 @@ resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEC2ContainerR
   role       = aws_iam_role.node_group_role.name
 }
 
-resource "aws_security_group" "allow_ssh" {
-  name        = var.aws_security_group.name
-  description = var.aws_security_group.description
-  vpc_id      = var.aws_security_group.vpc_id
+resource "aws_iam_role_policy_attachment" "cluster_autoscaler_policy_attachment" {
+  policy_arn = aws_iam_policy.cluster_autoscaler_policy.arn
+  role = aws_iam_role.node_group_role.name
+}
 
-  ingress {
-    description      = var.aws_security_group.ingress.description
-    from_port        = var.aws_security_group.ingress.from_port
-    to_port          = var.aws_security_group.ingress.to_port
-    protocol         = var.aws_security_group.ingress.protocol
-    cidr_blocks      = var.aws_security_group.ingress.cidr_blocks
-    ipv6_cidr_blocks = var.aws_security_group.ingress.ipv6_cidr_blocks
+resource "aws_security_group" "sg_eks_cluster" {
+  name        = var.aws_security_group_cluster.name
+  description = var.aws_security_group_cluster.description
+  vpc_id      = var.aws_security_group_cluster.vpc_id
+
+  tags = var.aws_security_group_cluster.tags
+}
+
+resource "aws_security_group" "sg_eks_nodes" {
+  name        = var.aws_security_group_node.name
+  description = var.aws_security_group_node.description
+  vpc_id      = var.aws_security_group_node.vpc_id
+  egress {
+    from_port   = var.aws_security_group_node.egress.from_port
+    to_port     = var.aws_security_group_node.egress.to_port
+    protocol    = var.aws_security_group_node.egress.protocol
+    cidr_blocks = var.aws_security_group_node.egress.cidr_blocks
   }
+  tags = var.aws_security_group_node.tags
+}
 
-  tags = var.aws_security_group.tags
+resource "aws_security_group_rule" "sg_rules_eks_cluster" {
+  for_each                 = var.sg_rules_eks_cluster
+  type                     = each.value.type
+  description              = each.value.description
+  from_port                = each.value.from_port
+  to_port                  = each.value.to_port
+  protocol                 = each.value.protocol
+  security_group_id        = aws_security_group.sg_eks_cluster.id
+  source_security_group_id = aws_security_group.sg_eks_nodes.id
+}
+
+resource "aws_security_group_rule" "sg_rule_intra_node" {
+  type                     = var.sg_rule_intra_node.type
+  description              = var.sg_rule_intra_node.description
+  from_port                = var.sg_rule_intra_node.from_port
+  to_port                  = var.sg_rule_intra_node.to_port
+  protocol                 = var.sg_rule_intra_node.protocol
+  security_group_id        = aws_security_group.eks_nodes.id
+  source_security_group_id = aws_security_group.eks_nodes.id
+}
+
+resource "aws_security_group_rule" "sg_rule_nodes_incoming_from_cluster" {
+  type                     = var.sg_rule_nodes_incoming_from_cluster.type
+  description              = var.sg_rule_nodes_incoming_from_cluster.description
+  from_port                = var.sg_rule_nodes_incoming_from_cluster.from_port
+  to_port                  = var.sg_rule_nodes_incoming_from_cluster.to_port
+  protocol                 = var.sg_rule_nodes_incoming_from_cluster.protocol
+  security_group_id        = aws_security_group.eks_nodes.id
+  source_security_group_id = aws_security_group.eks_cluster.id
 }
 
 resource "aws_eks_cluster" "eks_cluster" {
@@ -108,8 +170,8 @@ resource "aws_eks_node_group" "eks_node_groups" {
   # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
   # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
   depends_on = [
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.policy_attachment_AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.policy_attachment_AmazonEKSWorkerNodePolicy,
     aws_iam_role_policy_attachment.policy_attachment_AmazonEC2ContainerRegistryReadOnly,
   ]
 }

@@ -1,17 +1,64 @@
-variable "aws_security_group" {
+variable "aws_security_group_cluster" {
   type = object({
     name        = string
     description = string
     vpc_id      = string
-    ingress = object({
-      description      = string
-      protocol         = string
-      from_port        = number
-      to_port          = number
-      cidr_blocks      = list(string)
-      ipv6_cidr_blocks = list(string)
+    tags        = map(any)
+  })
+}
+
+variable "aws_security_group_node" {
+  type = object({
+    name        = string
+    description = string
+    vpc_id      = string
+    egress = object({
+      from_port   = number
+      to_port     = number
+      protocol    = string
+      cidr_blocks = list(string)
     })
     tags = map(any)
+  })
+}
+
+variable "sg_rules_eks_cluster" {
+  type = map(object({
+    type        = string
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+  }))
+}
+
+variable "sg_rules_eks_nodes" {
+  type = map(object({
+    type        = string
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+  }))
+}
+
+variable "sg_rule_intra_node" {
+  type = object({
+    type        = string
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
+  })
+}
+
+variable "sg_rule_nodes_incoming_from_cluster" {
+  type = object({
+    type        = string
+    description = string
+    from_port   = number
+    to_port     = number
+    protocol    = string
   })
 }
 
