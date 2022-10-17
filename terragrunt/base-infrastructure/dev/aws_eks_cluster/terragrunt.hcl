@@ -21,9 +21,9 @@ dependency "vpc" {
   config_path                             = "${get_parent_terragrunt_dir("stage")}/vpc_subnet_module"
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs = {
-    vpc_id                 = "some_id"
-    vpc_private_subnets_ids = ["some-id"] 
-    vpc_public_subnets_ids = ["some-id"]
+    vpc_id                  = "some_id"
+    vpc_private_subnets_ids = ["some-id"]
+    vpc_public_subnets_ids  = ["some-id"]
   }
 }
 
@@ -91,19 +91,19 @@ inputs = {
   }
 
   sg_rule_intra_node = {
-    type                     = "ingress"
-    description              = "Allow nodes to communicate with each other"
-    from_port                = 0
-    to_port                  = 65535
-    protocol                 = "-1"
+    type        = "ingress"
+    description = "Allow nodes to communicate with each other"
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "-1"
   }
 
   sg_rule_nodes_incoming_from_cluster = {
-    type                     = "ingress"
-    description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
-    from_port                = 1025
-    to_port                  = 65535
-    protocol                 = "tcp"
+    type        = "ingress"
+    description = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
+    from_port   = 1025
+    to_port     = 65535
+    protocol    = "tcp"
   }
 
   aws_eks_cluster = {

@@ -75,7 +75,7 @@ resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEC2ContainerR
 
 resource "aws_iam_role_policy_attachment" "cluster_autoscaler_policy_attachment" {
   policy_arn = aws_iam_policy.cluster_autoscaler_policy.arn
-  role = aws_iam_role.node_group_role.name
+  role       = aws_iam_role.node_group_role.name
 }
 
 resource "aws_security_group" "sg_eks_cluster" {
