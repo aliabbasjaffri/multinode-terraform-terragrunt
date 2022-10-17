@@ -22,6 +22,7 @@ dependency "vpc" {
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs = {
     vpc_id                 = "some_id"
+    vpc_private_subnets_ids = ["some-id"] 
     vpc_public_subnets_ids = ["some-id"]
   }
 }
@@ -48,21 +49,61 @@ EOF
 }
 
 inputs = {
-  aws_security_group = {
-    name        = "allow-ssh-access"
-    description = "Allow access on port 22"
+  aws_security_group_cluster = {
+    name        = "sg_eks_cluster"
+    description = "eks cluster secured network comms with nodes"
     vpc_id      = dependency.vpc.outputs.vpc_id
-    ingress = {
-      description      = "Allow SSH access"
-      protocol         = "tcp"
-      from_port        = 22
-      to_port          = 22
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = null
+    tags = {
+      Name = "sg_eks_cluster"
+    }
+  }
+
+  aws_security_group_nodes = {
+    name        = "sg_eks_node"
+    description = "Security group for all nodes in the cluster"
+    vpc_id      = dependency.vpc.outputs.vpc_id
+    egress = {
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = ["0.0.0.0/0"]
     }
     tags = {
-      Name = "sg_allow_tls"
+      Name = var.nodes_sg_name
     }
+  }
+
+  sg_rules_eks_cluster = {
+    "node_to_cluster" = {
+      type        = "ingress"
+      description = "Allow worker nodes to communicate with the cluster API Server"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+    },
+    "cluster_to_node" = {
+      type        = "egress"
+      description = "Allow cluster API Server to communicate with the worker nodes"
+      from_port   = 1024
+      to_port     = 65535
+      protocol    = "tcp"
+    }
+  }
+
+  sg_rule_intra_node = {
+    type                     = "ingress"
+    description              = "Allow nodes to communicate with each other"
+    from_port                = 0
+    to_port                  = 65535
+    protocol                 = "-1"
+  }
+
+  sg_rule_nodes_incoming_from_cluster = {
+    type                     = "ingress"
+    description              = "Allow worker Kubelets and pods to receive communication from the cluster control plane"
+    from_port                = 1025
+    to_port                  = 65535
+    protocol                 = "tcp"
   }
 
   aws_eks_cluster = {
@@ -73,7 +114,7 @@ inputs = {
 
   aws_node_groups = {
     "OpsAppsNode" = {
-      subnet_ids                  = dependency.vpc.outputs.vpc_public_subnets_ids
+      subnet_ids                  = dependency.vpc.outputs.vpc_private_subnets_ids
       scaling_config_desired_size = 1
       scaling_config_max_size     = 2
       scaling_config_min_size     = 1
