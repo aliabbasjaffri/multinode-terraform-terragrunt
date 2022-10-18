@@ -58,7 +58,7 @@ inputs = {
     }
   }
 
-  aws_security_group_nodes = {
+  aws_security_group_node = {
     name        = "sg_eks_node"
     description = "Security group for all nodes in the cluster"
     vpc_id      = dependency.vpc.outputs.vpc_id
@@ -69,7 +69,7 @@ inputs = {
       cidr_blocks = ["0.0.0.0/0"]
     }
     tags = {
-      Name = var.nodes_sg_name
+      Name = "sg_eks_nodes"
     }
   }
 

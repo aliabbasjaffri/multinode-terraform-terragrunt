@@ -32,16 +32,6 @@ variable "sg_rules_eks_cluster" {
   }))
 }
 
-variable "sg_rules_eks_nodes" {
-  type = map(object({
-    type        = string
-    description = string
-    from_port   = number
-    to_port     = number
-    protocol    = string
-  }))
-}
-
 variable "sg_rule_intra_node" {
   type = object({
     type        = string

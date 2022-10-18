@@ -116,8 +116,8 @@ resource "aws_security_group_rule" "sg_rule_intra_node" {
   from_port                = var.sg_rule_intra_node.from_port
   to_port                  = var.sg_rule_intra_node.to_port
   protocol                 = var.sg_rule_intra_node.protocol
-  security_group_id        = aws_security_group.eks_nodes.id
-  source_security_group_id = aws_security_group.eks_nodes.id
+  security_group_id        = aws_security_group.sg_eks_nodes.id
+  source_security_group_id = aws_security_group.sg_eks_nodes.id
 }
 
 resource "aws_security_group_rule" "sg_rule_nodes_incoming_from_cluster" {
@@ -126,8 +126,8 @@ resource "aws_security_group_rule" "sg_rule_nodes_incoming_from_cluster" {
   from_port                = var.sg_rule_nodes_incoming_from_cluster.from_port
   to_port                  = var.sg_rule_nodes_incoming_from_cluster.to_port
   protocol                 = var.sg_rule_nodes_incoming_from_cluster.protocol
-  security_group_id        = aws_security_group.eks_nodes.id
-  source_security_group_id = aws_security_group.eks_cluster.id
+  security_group_id        = aws_security_group.sg_eks_nodes.id
+  source_security_group_id = aws_security_group.sg_eks_cluster.id
 }
 
 resource "aws_eks_cluster" "eks_cluster" {
@@ -136,7 +136,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   vpc_config {
     subnet_ids         = var.aws_eks_cluster.subnets
-    security_group_ids = flatten(aws_security_group.allow_ssh.id)
+    security_group_ids = flatten(aws_security_group.sg_eks_cluster.id)
   }
 
   tags = var.aws_eks_cluster.tags
