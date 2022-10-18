@@ -136,7 +136,7 @@ resource "aws_eks_cluster" "eks_cluster" {
 
   vpc_config {
     subnet_ids         = var.aws_eks_cluster.subnets
-    security_group_ids = flatten(aws_security_group.sg_eks_cluster.id)
+    security_group_ids = [aws_security_group.sg_eks_cluster.id, aws_security_group.sg_eks_nodes.id]
   }
 
   tags = var.aws_eks_cluster.tags
