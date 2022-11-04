@@ -18,7 +18,7 @@ locals {
 }
 
 dependency "eks_cluster" {
-  config_path                             = "${get_parent_terragrunt_dir("base-infrastructure")}/dev/aws_eks_cluster"
+  config_path                             = "${get_parent_terragrunt_dir("root")}/base-infrastructure/${include.stage.locals.stage}/aws_eks_cluster"
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs = {
     eks_cluster_name     = "some_name"
