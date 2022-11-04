@@ -119,6 +119,9 @@ inputs = {
       scaling_config_max_size     = 2
       scaling_config_min_size     = 1
       update_config               = 1
+      labels = {
+        name = "OpsApps"
+      }
     },
     "Applications" = {
       subnet_ids                  = dependency.vpc.outputs.vpc_public_subnets_ids
@@ -126,6 +129,9 @@ inputs = {
       scaling_config_max_size     = 2
       scaling_config_min_size     = 1
       update_config               = 1
+      labels = {
+        name = "Applications"
+      }
     }
   }
 }

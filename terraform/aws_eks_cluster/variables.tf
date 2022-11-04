@@ -67,5 +67,6 @@ variable "aws_node_groups" {
     scaling_config_max_size     = number
     scaling_config_min_size     = number
     update_config               = number
+    labels                      = map(string)
   }))
 }
