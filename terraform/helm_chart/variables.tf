@@ -1,10 +1,10 @@
-variable "helm_release" {
+variable "helm_chart" {
   type = object({
-    name       = string
-    repository = string
-    chart      = string
-    version    = string
-    values     = string
+    name          = string
+    repository    = string
+    chart         = string
+    chart_version = string
+    values        = any
     set = list(object({
       name  = string
       value = any
