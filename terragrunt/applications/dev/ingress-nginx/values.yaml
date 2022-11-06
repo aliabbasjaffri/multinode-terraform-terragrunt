@@ -291,6 +291,7 @@ controller:
   ##
   nodeSelector:
     kubernetes.io/os: linux
+    name: OpsApps
 
   ## Liveness and readiness probe values
   ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
@@ -656,6 +657,7 @@ controller:
       podAnnotations: {}
       nodeSelector:
         kubernetes.io/os: linux
+        name: OpsApps
       tolerations: []
       # -- Labels to be added to patch job resources
       labels: {}
@@ -848,6 +850,7 @@ defaultBackend:
   ##
   nodeSelector:
     kubernetes.io/os: linux
+    name: OpsApps
 
   # -- Annotations to be added to default backend pods
   ##
