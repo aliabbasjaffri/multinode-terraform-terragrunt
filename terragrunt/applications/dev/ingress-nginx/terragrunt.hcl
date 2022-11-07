@@ -49,15 +49,15 @@ terraform {
 provider "aws" {
   region = "${include.root.locals.region}"
 }
+
 provider "helm" {
-  debug = true
   kubernetes {
     host                   = "${dependency.eks_cluster.outputs.eks_cluster_endpoint}"
-    cluster_ca_certificate = "${dependency.eks_cluster.outputs.eks_cluster_ca_cert}"
+    cluster_ca_certificate = base64decode("${dependency.eks_cluster.outputs.eks_cluster_ca_cert}")
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
       command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
     }
   }
 }
@@ -71,7 +71,7 @@ inputs = {
     chart         = "ingress-nginx"
     chart_version = "4.3.0"
     values        = "${file("values.yaml")}"
-    set = []
+    # set = []
   }
 }
 
