@@ -171,7 +171,8 @@ podLabels: {}
 #     - "8.8.8.8"
 
 nodeSelector:
-  kubernetes.io/os: linux
+  # kubernetes.io/os: linux
+  name: OpsApps
 
 ingressShim:
   {}
@@ -320,7 +321,8 @@ webhook:
     timeoutSeconds: 1
 
   nodeSelector:
-    kubernetes.io/os: linux
+    # kubernetes.io/os: linux
+    name: OpsApps
 
   affinity: {}
 
@@ -463,7 +465,8 @@ cainjector:
     #   memory: 32Mi
 
   nodeSelector:
-    kubernetes.io/os: linux
+    # kubernetes.io/os: linux
+    name: OpsApps
 
   affinity: {}
 
@@ -558,7 +561,8 @@ startupapicheck:
     #   memory: 32Mi
 
   nodeSelector:
-    kubernetes.io/os: linux
+    # kubernetes.io/os: linux
+    name: OpsApps
 
   affinity: {}
 
