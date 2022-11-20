@@ -52,7 +52,8 @@ module "eks" {
     }
     kube-proxy = {}
     vpc-cni = {
-      resolve_conflicts = "OVERWRITE"
+      resolve_conflicts        = "OVERWRITE"
+      service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
     }
   }
 
@@ -63,10 +64,6 @@ module "eks" {
 
   vpc_id     = var.aws_eks_cluster.vpc_id
   subnet_ids = var.aws_eks_cluster.subnets
-
-  # Self managed node groups will not automatically create the aws-auth configmap so we need to
-  create_aws_auth_configmap = true
-  manage_aws_auth_configmap = true
 
   # Extend cluster security group rules
   cluster_security_group_additional_rules = {
@@ -101,18 +98,56 @@ module "eks" {
     }
   }
 
-  self_managed_node_group_defaults = {
-    create_security_group = false
+  eks_managed_node_groups = {
+    default_node_group = {
+      create_launch_template = false
+      launch_template_name   = ""
 
-    # enable discovery of autoscaling groups by cluster-autoscaler
-    autoscaling_group_tags = {
-      "k8s.io/cluster-autoscaler/enabled" : true,
-      "k8s.io/cluster-autoscaler/${var.aws_eks_cluster.name}" : "owned",
+      disk_size = 50
+
+      min_size     = 1
+      max_size     = 7
+      desired_size = 1
+
+      capacity_type        = "SPOT"
+      force_update_version = true
+      instance_types       = ["t3.small"]
+      
+      # labels = {
+      #   GithubRepo = "terraform-aws-eks"
+      #   GithubOrg  = "terraform-aws-modules"
+      # }
+
+      # taints = [
+      #   {
+      #     key    = "dedicated"
+      #     value  = "gpuGroup"
+      #     effect = "NO_SCHEDULE"
+      #   }
+      # ]
     }
   }
+
   tags = var.aws_eks_cluster.tags
 }
 
 ################################################################################
 # EKS Module
 ################################################################################
+
+module "vpc_cni_irsa" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "~> 4.12"
+
+  role_name_prefix      = "VPC-CNI-IRSA"
+  attach_vpc_cni_policy = true
+
+  oidc_providers = {
+    main = {
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:aws-node"]
+    }
+  }
+
+  tags = var.aws_eks_cluster.tags
+}
