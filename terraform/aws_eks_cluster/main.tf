@@ -1,179 +1,118 @@
-resource "aws_iam_role" "eks_role" {
-  name = "eks-cluster-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "eks.amazonaws.com"
-      }
-    }]
-  })
+################################################################################
+# Supporting Resources
+################################################################################
+
+resource "aws_kms_key" "eks" {
+  description             = "EKS Secret Encryption Key"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+
+  tags = var.aws_eks_cluster.tags
 }
 
-resource "aws_iam_role" "node_group_role" {
-  name = "node-group-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-    }]
-  })
-}
+resource "aws_security_group" "additional" {
+  name_prefix = "${var.aws_eks_cluster.name}-additional-sg"
+  vpc_id      = var.aws_eks_cluster.vpc_id
 
-resource "aws_iam_policy" "cluster_autoscaler_policy" {
-  name        = "cluster_autoscaler_policy"
-  description = "access to nodes to scale out and in"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Resource = "*"
-        Effect   = "Allow"
-        Action = [
-          "autoscaling:DescribeTags",
-          "autoscaling:SetDesiredCapacity",
-          "autoscaling:DescribeAutoScalingGroups",
-          "autoscaling:DescribeLaunchConfigurations",
-          "autoscaling:DescribeAutoScalingInstances",
-          "autoscaling:TerminateInstanceInAutoScalingGroup"
-        ]
-      },
+  ingress {
+    from_port = 22
+    to_port   = 22
+    protocol  = "tcp"
+    cidr_blocks = [
+      "10.0.0.0/8",
+      "172.16.0.0/12",
+      "192.168.0.0/16",
     ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEKSClusterPolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEKSVPCResourceController" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSVPCResourceController"
-  role       = aws_iam_role.eks_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEKSWorkerNodePolicy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-  role       = aws_iam_role.node_group_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEKS_CNI_Policy" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-  role       = aws_iam_role.node_group_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "policy_attachment_AmazonEC2ContainerRegistryReadOnly" {
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-  role       = aws_iam_role.node_group_role.name
-}
-
-resource "aws_iam_role_policy_attachment" "cluster_autoscaler_policy_attachment" {
-  policy_arn = aws_iam_policy.cluster_autoscaler_policy.arn
-  role       = aws_iam_role.node_group_role.name
-}
-
-resource "aws_security_group" "sg_eks_cluster" {
-  name        = var.aws_security_group_cluster.name
-  description = var.aws_security_group_cluster.description
-  vpc_id      = var.aws_security_group_cluster.vpc_id
-
-  tags = var.aws_security_group_cluster.tags
-}
-
-resource "aws_security_group" "sg_eks_nodes" {
-  name        = var.aws_security_group_node.name
-  description = var.aws_security_group_node.description
-  vpc_id      = var.aws_security_group_node.vpc_id
-  egress {
-    from_port   = var.aws_security_group_node.egress.from_port
-    to_port     = var.aws_security_group_node.egress.to_port
-    protocol    = var.aws_security_group_node.egress.protocol
-    cidr_blocks = var.aws_security_group_node.egress.cidr_blocks
-  }
-  tags = var.aws_security_group_node.tags
-}
-
-resource "aws_security_group_rule" "sg_rules_eks_cluster" {
-  for_each                 = var.sg_rules_eks_cluster
-  type                     = each.value.type
-  description              = each.value.description
-  from_port                = each.value.from_port
-  to_port                  = each.value.to_port
-  protocol                 = each.value.protocol
-  security_group_id        = aws_security_group.sg_eks_cluster.id
-  source_security_group_id = aws_security_group.sg_eks_nodes.id
-}
-
-resource "aws_security_group_rule" "sg_rule_intra_node" {
-  type                     = var.sg_rule_intra_node.type
-  description              = var.sg_rule_intra_node.description
-  from_port                = var.sg_rule_intra_node.from_port
-  to_port                  = var.sg_rule_intra_node.to_port
-  protocol                 = var.sg_rule_intra_node.protocol
-  security_group_id        = aws_security_group.sg_eks_nodes.id
-  source_security_group_id = aws_security_group.sg_eks_nodes.id
-}
-
-resource "aws_security_group_rule" "sg_rule_nodes_incoming_from_cluster" {
-  type                     = var.sg_rule_nodes_incoming_from_cluster.type
-  description              = var.sg_rule_nodes_incoming_from_cluster.description
-  from_port                = var.sg_rule_nodes_incoming_from_cluster.from_port
-  to_port                  = var.sg_rule_nodes_incoming_from_cluster.to_port
-  protocol                 = var.sg_rule_nodes_incoming_from_cluster.protocol
-  security_group_id        = aws_security_group.sg_eks_nodes.id
-  source_security_group_id = aws_security_group.sg_eks_cluster.id
-}
-
-resource "aws_eks_cluster" "eks_cluster" {
-  name     = var.aws_eks_cluster.name
-  role_arn = aws_iam_role.eks_role.arn
-
-  vpc_config {
-    subnet_ids         = var.aws_eks_cluster.subnets
-    security_group_ids = [aws_security_group.sg_eks_cluster.id, aws_security_group.sg_eks_nodes.id]
   }
 
   tags = var.aws_eks_cluster.tags
-
-  depends_on = [
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEKSClusterPolicy,
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEKSVPCResourceController,
-  ]
 }
 
-resource "aws_eks_node_group" "eks_node_groups" {
-  for_each        = var.aws_node_groups
-  cluster_name    = aws_eks_cluster.eks_cluster.name
-  node_group_name = each.key
-  node_role_arn   = aws_iam_role.node_group_role.arn
-  subnet_ids      = each.value.subnet_ids
+################################################################################
+# Supporting Resources
+################################################################################
 
-  instance_types = ["t3.micro"]
-  capacity_type  = "ON_DEMAND"
 
-  scaling_config {
-    desired_size = each.value.scaling_config_desired_size
-    max_size     = each.value.scaling_config_max_size
-    min_size     = each.value.scaling_config_min_size
+################################################################################
+# EKS Module
+################################################################################
+
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "18.30.3"
+
+  cluster_name                    = var.aws_eks_cluster.name
+  cluster_version                 = var.aws_eks_cluster.cluster_version
+  cluster_endpoint_private_access = true
+  cluster_endpoint_public_access  = true
+
+  cluster_addons = {
+    coredns = {
+      resolve_conflicts = "OVERWRITE"
+    }
+    kube-proxy = {}
+    vpc-cni = {
+      resolve_conflicts = "OVERWRITE"
+    }
   }
 
-  update_config {
-    max_unavailable = each.value.update_config
+  cluster_encryption_config = [{
+    provider_key_arn = aws_kms_key.eks.arn
+    resources        = ["secrets"]
+  }]
+
+  vpc_id     = var.aws_eks_cluster.vpc_id
+  subnet_ids = var.aws_eks_cluster.subnets
+
+  # Self managed node groups will not automatically create the aws-auth configmap so we need to
+  create_aws_auth_configmap = true
+  manage_aws_auth_configmap = true
+
+  # Extend cluster security group rules
+  cluster_security_group_additional_rules = {
+    egress_nodes_ephemeral_ports_tcp = {
+      description                = "To node 1025-65535"
+      protocol                   = "tcp"
+      from_port                  = 1025
+      to_port                    = 65535
+      type                       = "egress"
+      source_node_security_group = true
+    }
   }
 
-  labels = each.value.labels
+  # Extend node-to-node security group rules
+  node_security_group_additional_rules = {
+    ingress_self_all = {
+      description = "Node to node all ports/protocols"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      type        = "ingress"
+      self        = true
+    }
+    egress_all = {
+      description      = "Node all egress"
+      protocol         = "-1"
+      from_port        = 0
+      to_port          = 0
+      type             = "egress"
+      cidr_blocks      = ["0.0.0.0/0"]
+      ipv6_cidr_blocks = ["::/0"]
+    }
+  }
 
-  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
-  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
-  depends_on = [
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEKS_CNI_Policy,
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEKSWorkerNodePolicy,
-    aws_iam_role_policy_attachment.policy_attachment_AmazonEC2ContainerRegistryReadOnly,
-  ]
+  self_managed_node_group_defaults = {
+    create_security_group = false
+
+    # enable discovery of autoscaling groups by cluster-autoscaler
+    autoscaling_group_tags = {
+      "k8s.io/cluster-autoscaler/enabled" : true,
+      "k8s.io/cluster-autoscaler/${var.aws_eks_cluster.name}" : "owned",
+    }
+  }
+  tags = var.aws_eks_cluster.tags
 }
+
+################################################################################
+# EKS Module
+################################################################################
