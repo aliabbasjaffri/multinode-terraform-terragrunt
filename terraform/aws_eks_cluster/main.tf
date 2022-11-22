@@ -128,13 +128,12 @@ module "eks" {
       instance_types       = ["t3.small"]
 
       labels = {
-        GithubRepo = "terraform-aws-eks"
-        GithubOrg  = "terraform-aws-modules"
+        NodeTypeClass = "appops"
       }
-      
+
       taints = [{
         key    = "dedicated"
-        value  = "gpuGroup"
+        value  = "appops"
         effect = "NO_SCHEDULE"
         }
       ]
