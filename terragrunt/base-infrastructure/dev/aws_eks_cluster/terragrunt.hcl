@@ -50,11 +50,11 @@ EOF
 
 inputs = {
   aws_eks_cluster = {
-    name    = "eks-cluster"
-    vpc_id  = dependency.vpc.outputs.vpc_id
-    subnets = dependency.vpc.outputs.vpc_public_subnets_ids
+    name            = "eks-cluster"
+    vpc_id          = dependency.vpc.outputs.vpc_id
+    subnets         = dependency.vpc.outputs.vpc_public_subnets_ids
     cluster_version = "1.24"
-    tags    = local.tags
+    tags            = local.tags
   }
 }
 

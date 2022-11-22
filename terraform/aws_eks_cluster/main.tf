@@ -112,19 +112,6 @@ module "eks" {
       capacity_type        = "SPOT"
       force_update_version = true
       instance_types       = ["t3.small"]
-      
-      # labels = {
-      #   GithubRepo = "terraform-aws-eks"
-      #   GithubOrg  = "terraform-aws-modules"
-      # }
-
-      # taints = [
-      #   {
-      #     key    = "dedicated"
-      #     value  = "gpuGroup"
-      #     effect = "NO_SCHEDULE"
-      #   }
-      # ]
     }
     default_node_group_2 = {
       create_launch_template = false
@@ -139,17 +126,16 @@ module "eks" {
       capacity_type        = "SPOT"
       force_update_version = true
       instance_types       = ["t3.small"]
-      
+
       labels = {
         GithubRepo = "terraform-aws-eks"
         GithubOrg  = "terraform-aws-modules"
       }
-
-      taints = [
-        {
-          key    = "dedicated"
-          value  = "gpuGroup"
-          effect = "NO_SCHEDULE"
+      
+      taints = [{
+        key    = "dedicated"
+        value  = "gpuGroup"
+        effect = "NO_SCHEDULE"
         }
       ]
     }
