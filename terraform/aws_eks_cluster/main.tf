@@ -99,7 +99,7 @@ module "eks" {
   }
 
   eks_managed_node_groups = {
-    default_node_group = {
+    default_node_group_1 = {
       create_launch_template = false
       launch_template_name   = ""
 
@@ -125,6 +125,33 @@ module "eks" {
       #     effect = "NO_SCHEDULE"
       #   }
       # ]
+    }
+    default_node_group_2 = {
+      create_launch_template = false
+      launch_template_name   = ""
+
+      disk_size = 50
+
+      min_size     = 1
+      max_size     = 7
+      desired_size = 1
+
+      capacity_type        = "SPOT"
+      force_update_version = true
+      instance_types       = ["t3.small"]
+      
+      labels = {
+        GithubRepo = "terraform-aws-eks"
+        GithubOrg  = "terraform-aws-modules"
+      }
+
+      taints = [
+        {
+          key    = "dedicated"
+          value  = "gpuGroup"
+          effect = "NO_SCHEDULE"
+        }
+      ]
     }
   }
 
