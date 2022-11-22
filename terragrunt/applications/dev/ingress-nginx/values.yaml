@@ -218,11 +218,11 @@ controller:
   # -- Node tolerations for server scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
-  #  - key: "key"
-  #    operator: "Equal|Exists"
-  #    value: "value"
-  #    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "appops"
+      effect: "NoSchedule"
 
   # -- Affinity and anti-affinity rules for server scheduling to nodes
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -290,8 +290,7 @@ controller:
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    # kubernetes.io/os: linux
-    name: OpsApps
+    kubernetes.io/os: linux
 
   ## Liveness and readiness probe values
   ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
@@ -656,9 +655,12 @@ controller:
       priorityClassName: ""
       podAnnotations: {}
       nodeSelector:
-        # kubernetes.io/os: linux
-        name: OpsApps
-      tolerations: []
+        kubernetes.io/os: linux
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "appops"
+          effect: "NoSchedule"
       # -- Labels to be added to patch job resources
       labels: {}
       securityContext:
@@ -821,11 +823,11 @@ defaultBackend:
   # -- Node tolerations for server scheduling to nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
-  tolerations: []
-  #  - key: "key"
-  #    operator: "Equal|Exists"
-  #    value: "value"
-  #    effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "appops"
+      effect: "NoSchedule"
 
   affinity: {}
 
@@ -849,8 +851,7 @@ defaultBackend:
   ## Ref: https://kubernetes.io/docs/user-guide/node-selection/
   ##
   nodeSelector:
-    # kubernetes.io/os: linux
-    name: OpsApps
+    kubernetes.io/os: linux
 
   # -- Annotations to be added to default backend pods
   ##

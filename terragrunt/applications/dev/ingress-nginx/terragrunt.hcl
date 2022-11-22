@@ -23,7 +23,7 @@ dependency "eks_cluster" {
   mock_outputs = {
     eks_cluster_name     = "some_name"
     eks_cluster_endpoint = "some_id"
-    eks_cluster_ca_cert  = "some-id"
+    eks_cluster_ca_cert  = "some-cert"
   }
 }
 
@@ -71,7 +71,7 @@ inputs = {
     chart         = "ingress-nginx"
     chart_version = "4.3.0"
     values        = "${file("values.yaml")}"
-    # set = []
+    set = []
   }
 }
 
