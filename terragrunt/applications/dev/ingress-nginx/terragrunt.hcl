@@ -67,11 +67,25 @@ EOF
 inputs = {
   helm_chart = {
     name          = "ingress-nginx"
+    namespace     = "ingress-nginx"
+    create_namespace = true
     repository    = "https://kubernetes.github.io/ingress-nginx"
     chart         = "ingress-nginx"
     chart_version = "4.3.0"
     values        = "${file("values.yaml")}"
-    set = []
+    set = [{
+      name : "controller.autoscaling.enabled",
+      value: "true",
+      type: "auto"
+    }, {
+      name : "controller.adminssionWebhooks.patch.enabled",
+      value: "true",
+      type: "auto"
+    }, {
+      name : "defaultBackend.enabled",
+      value: "true",
+      type: "auto"
+    }]
   }
 }
 
