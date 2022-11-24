@@ -47,14 +47,14 @@ module "eks" {
   cluster_endpoint_public_access  = true
 
   cluster_addons = {
-    coredns = {
-      resolve_conflicts = "OVERWRITE"
-    }
+    # coredns = {
+    #   resolve_conflicts = "OVERWRITE"
+    # }
     kube-proxy = {}
-    vpc-cni = {
-      resolve_conflicts        = "OVERWRITE"
-      service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
-    }
+    # vpc-cni = {
+    #   resolve_conflicts        = "OVERWRITE"
+    #   service_account_role_arn = module.vpc_cni_irsa.iam_role_arn
+    # }
   }
 
   cluster_encryption_config = [{
@@ -97,6 +97,10 @@ module "eks" {
       ipv6_cidr_blocks = ["::/0"]
     }
   }
+
+  # eks_managed_node_group_defaults = {
+  #   iam_role_attach_cni_policy = true
+  # }
 
   eks_managed_node_groups = {
     default_node_group_1 = {
@@ -152,6 +156,7 @@ module "vpc_cni_irsa" {
   version = "~> 4.12"
 
   role_name_prefix      = "VPC-CNI-IRSA"
+  # vpc_cni_enable_ipv6   = true
   attach_vpc_cni_policy = true
 
   oidc_providers = {
