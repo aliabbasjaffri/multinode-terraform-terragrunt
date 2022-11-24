@@ -6,6 +6,7 @@ locals {
   version_provider_aws  = "=4.34.0"
   version_provider_vpc  = "=3.16.1"
   version_provider_helm = "=2.7.1"
+  version_provider_kubectl = "=1.14.0"
 
   root_tags = {
     project = "eks-terraform-terragrunt"

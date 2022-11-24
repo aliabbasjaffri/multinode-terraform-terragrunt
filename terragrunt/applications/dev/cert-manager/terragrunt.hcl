@@ -18,12 +18,13 @@ locals {
 }
 
 dependency "eks_cluster" {
-  config_path                             = "${get_parent_terragrunt_dir("root")}/base-infrastructure/${include.stage.locals.stage}/aws_eks_cluster"
+  # config_path                             = "${get_parent_terragrunt_dir("root")}/base-infrastructure/${include.stage.locals.stage}/aws_eks_cluster"
+  config_path                             = "${get_parent_terragrunt_dir("root")}/base-infrastructure/dev/aws_eks_cluster"
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs = {
     eks_cluster_name     = "some_name"
     eks_cluster_endpoint = "some_id"
-    eks_cluster_ca_cert  = "some-id"
+    eks_cluster_ca_cert  = "some-cert"
   }
 }
 
@@ -39,9 +40,17 @@ terraform {
       source = "hashicorp/aws"
       version = "${include.root.locals.version_provider_aws}"
     }
+    # kubernetes = {
+    #   source  = "hashicorp/kubernetes"
+    #   version = ">= 2.0.3"
+    # }
     helm = {
       source = "hashicorp/helm"
       version = "${include.root.locals.version_provider_helm}"
+    }
+    kubectl = {
+      source = "gavinbunney/kubectl"
+      version = "1.14.0"
     }
   }
 }
@@ -49,50 +58,58 @@ terraform {
 provider "aws" {
   region = "${include.root.locals.region}"
 }
+
+# provider "kubernetes" {
+#   host                   = "${dependency.eks_cluster.outputs.eks_cluster_endpoint}"
+#   cluster_ca_certificate = base64decode("${dependency.eks_cluster.outputs.eks_cluster_ca_cert}")
+#   exec {
+#     api_version = "client.authentication.k8s.io/v1beta1"
+#     command     = "aws"
+#     args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
+#   }
+# }
+
 provider "helm" {
-  debug = true
   kubernetes {
     host                   = "${dependency.eks_cluster.outputs.eks_cluster_endpoint}"
-    cluster_ca_certificate = "${dependency.eks_cluster.outputs.eks_cluster_ca_cert}"
+    cluster_ca_certificate = base64decode("${dependency.eks_cluster.outputs.eks_cluster_ca_cert}")
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
       command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
     }
+  }
+}
+
+provider "kubectl" {
+  host                   = "${dependency.eks_cluster.outputs.eks_cluster_endpoint}"
+  cluster_ca_certificate = base64decode("${dependency.eks_cluster.outputs.eks_cluster_ca_cert}")
+  load_config_file       = false
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", "${dependency.eks_cluster.outputs.eks_cluster_name}"]
   }
 }
 EOF
 }
 
 inputs = {
-  helm_chart = {
-    name          = "jetstack"
-    repository    = "https://charts.jetstack.io"
-    chart         = "jetstack/cert-manager"
-    chart_version = "1.10.0"
-    values        = "${file("values.yaml")}"
-    set = [{
-      name  = "nodeSelector",
-      value = "{ name : OpsApps }",
-      type  = "auto"
-      }, {
-      name  = "webhook.nodeSelector",
-      value = "{ name : OpsApps }",
-      type  = "auto"
-      }, {
-      name  = "cainjector.nodeSelector",
-      value = "{ name : OpsApps }",
-      type  = "auto"
-      }, {
-      name  = "startupapicheck.nodeSelector",
-      value = "{ name : OpsApps }",
-      type  = "auto"
-      }
-      # add node affinity and taints
-    ]
+  cert_manager_helm_chart = {
+    helm_chart = {
+      name          = "cert-manager"
+      namespace     = "cert-manager"
+      create_namespace = true
+      repository    = "https://charts.jetstack.io"
+      chart         = "cert-manager"
+      chart_version = "1.10.0"
+      values        = "${file("values.yaml")}"
+      set = []
+    }
   }
+
 }
 
 terraform {
-  source = "${get_parent_terragrunt_dir("root")}/..//terraform/helm_chart"
+  source = "${get_parent_terragrunt_dir("root")}/..//terraform/cert_manager_helm_chart"
 }

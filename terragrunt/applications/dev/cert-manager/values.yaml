@@ -171,8 +171,7 @@ podLabels: {}
 #     - "8.8.8.8"
 
 nodeSelector:
-  # kubernetes.io/os: linux
-  name: OpsApps
+  kubernetes.io/os: linux
 
 ingressShim:
   {}
@@ -218,7 +217,11 @@ affinity: {}
 #     operator: Equal
 #     value: master
 #     effect: NoSchedule
-tolerations: []
+tolerations:
+  - key: "dedicated"
+    operator: "Equal"
+    value: "appops"
+    effect: "NoSchedule"
 
 # expects input structure as per specification https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#topologyspreadconstraint-v1-core
 # for example:
@@ -321,12 +324,15 @@ webhook:
     timeoutSeconds: 1
 
   nodeSelector:
-    # kubernetes.io/os: linux
-    name: OpsApps
+    kubernetes.io/os: linux
 
   affinity: {}
 
-  tolerations: []
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "appops"
+      effect: "NoSchedule"
 
   topologySpreadConstraints: []
 
@@ -465,12 +471,15 @@ cainjector:
     #   memory: 32Mi
 
   nodeSelector:
-    # kubernetes.io/os: linux
-    name: OpsApps
+    kubernetes.io/os: linux
 
   affinity: {}
 
-  tolerations: []
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "appops"
+      effect: "NoSchedule"
 
   topologySpreadConstraints: []
 
@@ -561,12 +570,15 @@ startupapicheck:
     #   memory: 32Mi
 
   nodeSelector:
-    # kubernetes.io/os: linux
-    name: OpsApps
+    kubernetes.io/os: linux
 
   affinity: {}
 
-  tolerations: []
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "appops"
+      effect: "NoSchedule"
 
   # Optional additional labels to add to the startupapicheck Pods
   podLabels: {}
