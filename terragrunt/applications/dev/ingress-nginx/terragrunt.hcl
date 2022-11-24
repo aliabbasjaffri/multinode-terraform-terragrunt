@@ -78,10 +78,6 @@ inputs = {
       value: "true",
       type: "auto"
     }, {
-      name : "controller.adminssionWebhooks.patch.enabled",
-      value: "true",
-      type: "auto"
-    }, {
       name : "defaultBackend.enabled",
       value: "true",
       type: "auto"
