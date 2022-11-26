@@ -172,6 +172,7 @@ podLabels: {}
 
 nodeSelector:
   kubernetes.io/os: linux
+  NodeTypeClass: appops
 
 ingressShim:
   {}
@@ -333,6 +334,7 @@ webhook:
 
   nodeSelector:
     kubernetes.io/os: linux
+    NodeTypeClass: appops
 
   affinity:
     nodeAffinity:
@@ -488,6 +490,7 @@ cainjector:
 
   nodeSelector:
     kubernetes.io/os: linux
+    NodeTypeClass: appops
 
   affinity:
     nodeAffinity:
@@ -595,6 +598,7 @@ startupapicheck:
 
   nodeSelector:
     kubernetes.io/os: linux
+    NodeTypeClass: appops
 
   affinity:
     nodeAffinity:

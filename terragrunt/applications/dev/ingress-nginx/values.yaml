@@ -298,6 +298,7 @@ controller:
   ##
   nodeSelector:
     kubernetes.io/os: linux
+    NodeTypeClass: appops
 
   ## Liveness and readiness probe values
   ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
@@ -663,6 +664,7 @@ controller:
       podAnnotations: {}
       nodeSelector:
         kubernetes.io/os: linux
+        NodeTypeClass: appops
       tolerations:
         - key: "dedicated"
           operator: "Equal"
@@ -867,6 +869,7 @@ defaultBackend:
   ##
   nodeSelector:
     kubernetes.io/os: linux
+    NodeTypeClass: appops
 
   # -- Annotations to be added to default backend pods
   ##
