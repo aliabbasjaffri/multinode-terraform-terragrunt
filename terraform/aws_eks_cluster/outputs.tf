@@ -1,5 +1,5 @@
 output "eks_cluster_name" {
-  value = var.aws_eks_cluster.name
+  value = var.aws_eks_cluster.cluster_name
 }
 
 output "eks_cluster_id" {

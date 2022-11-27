@@ -3,29 +3,26 @@
 ################################################################################
 
 resource "aws_kms_key" "eks" {
-  description             = "EKS Secret Encryption Key"
-  deletion_window_in_days = 7
-  enable_key_rotation     = true
-
-  tags = var.aws_eks_cluster.tags
+  description             = var.aws_kms_key.description
+  deletion_window_in_days = var.aws_kms_key.deletion_window_in_days
+  enable_key_rotation     = var.aws_kms_key.enable_key_rotation
+  tags                    = var.aws_kms_key.tags
 }
 
-resource "aws_security_group" "additional" {
-  name_prefix = "${var.aws_eks_cluster.name}-additional-sg"
-  vpc_id      = var.aws_eks_cluster.vpc_id
+resource "aws_security_group" "additional_security_group" {
+  name_prefix = var.aws_security_group.name_prefix
+  vpc_id      = var.aws_security_group.vpc_id
 
-  ingress {
-    from_port = 22
-    to_port   = 22
-    protocol  = "tcp"
-    cidr_blocks = [
-      "10.0.0.0/8",
-      "172.16.0.0/12",
-      "192.168.0.0/16",
-    ]
+  dynamic "ingress" {
+    for_each = var.aws_security_group.ingresses
+    content {
+      from_port   = ingress.value.from_port
+      to_port     = ingress.value.to_port
+      protocol    = ingress.value.protocol
+      cidr_blocks = ingress.value.cidr_blocks
+    }
   }
-
-  tags = var.aws_eks_cluster.tags
+  tags = var.aws_security_group.tags
 }
 
 ################################################################################
@@ -41,10 +38,10 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "18.30.3"
 
-  cluster_name                    = var.aws_eks_cluster.name
+  cluster_name                    = var.aws_eks_cluster.cluster_name
   cluster_version                 = var.aws_eks_cluster.cluster_version
-  cluster_endpoint_private_access = true
-  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = var.aws_eks_cluster.cluster_endpoint_private_access
+  cluster_endpoint_public_access  = var.aws_eks_cluster.cluster_endpoint_public_access
 
   cluster_addons = {
     coredns = {
@@ -66,83 +63,16 @@ module "eks" {
   subnet_ids = var.aws_eks_cluster.subnets
 
   # Extend cluster security group rules
-  cluster_security_group_additional_rules = {
-    egress_nodes_ephemeral_ports_tcp = {
-      description                = "To node 1025-65535"
-      protocol                   = "tcp"
-      from_port                  = 1025
-      to_port                    = 65535
-      type                       = "egress"
-      source_node_security_group = true
-    }
-  }
+  cluster_security_group_additional_rules = var.aws_eks_cluster.cluster_security_group_additional_rules
 
   # Extend node-to-node security group rules
-  node_security_group_additional_rules = {
-    ingress_self_all = {
-      description = "Node to node all ports/protocols"
-      protocol    = "-1"
-      from_port   = 0
-      to_port     = 0
-      type        = "ingress"
-      self        = true
-    }
-    egress_all = {
-      description      = "Node all egress"
-      protocol         = "-1"
-      from_port        = 0
-      to_port          = 0
-      type             = "egress"
-      cidr_blocks      = ["0.0.0.0/0"]
-      ipv6_cidr_blocks = ["::/0"]
-    }
-  }
+  node_security_group_additional_rules = var.aws_eks_cluster.node_security_group_additional_rules
 
   # eks_managed_node_group_defaults = {
   #   iam_role_attach_cni_policy = true
   # }
 
-  eks_managed_node_groups = {
-    default_node_group_1 = {
-      create_launch_template = false
-      launch_template_name   = ""
-
-      disk_size = 50
-
-      min_size     = 1
-      max_size     = 7
-      desired_size = 1
-
-      capacity_type        = "SPOT"
-      force_update_version = true
-      instance_types       = ["t3.small"]
-    }
-    default_node_group_2 = {
-      create_launch_template = false
-      launch_template_name   = ""
-
-      disk_size = 50
-
-      min_size     = 1
-      max_size     = 7
-      desired_size = 1
-
-      capacity_type        = "SPOT"
-      force_update_version = true
-      instance_types       = ["t3.small"]
-
-      labels = {
-        NodeTypeClass = "appops"
-      }
-
-      taints = [{
-        key    = "dedicated"
-        value  = "appops"
-        effect = "NO_SCHEDULE"
-        }
-      ]
-    }
-  }
+  eks_managed_node_groups = var.aws_eks_cluster.eks_managed_node_groups
 
   tags = var.aws_eks_cluster.tags
 }
@@ -155,9 +85,9 @@ module "vpc_cni_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
   version = "~> 4.12"
 
-  role_name_prefix = "VPC-CNI-IRSA"
-  attach_vpc_cni_policy = true
-  vpc_cni_enable_ipv4   = true
+  role_name_prefix      = var.vpc_cni_irsa.role_name_prefix
+  attach_vpc_cni_policy = var.vpc_cni_irsa.attach_vpc_cni_policy
+  vpc_cni_enable_ipv4   = var.vpc_cni_irsa.vpc_cni_enable_ipv4
 
   oidc_providers = {
     main = {
