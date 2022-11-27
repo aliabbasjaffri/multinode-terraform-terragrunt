@@ -10,6 +10,6 @@ resource "kubectl_manifest" "apply_crds" {
 module "cert_manager" {
   source = "../helm_chart"
 
-  helm_chart = var.cert_manager_helm_chart.helm_chart
+  helm_chart = var.cert_manager_helm_chart
   depends_on = [kubectl_manifest.apply_crds]
 }

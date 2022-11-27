@@ -96,18 +96,15 @@ EOF
 
 inputs = {
   cert_manager_helm_chart = {
-    helm_chart = {
-      name          = "cert-manager"
-      namespace     = "cert-manager"
-      create_namespace = true
-      repository    = "https://charts.jetstack.io"
-      chart         = "cert-manager"
-      chart_version = "1.10.0"
-      values        = "${file("values.yaml")}"
-      set = []
-    }
+    name             = "cert-manager"
+    namespace        = "cert-manager"
+    create_namespace = true
+    repository       = "https://charts.jetstack.io"
+    chart            = "cert-manager"
+    chart_version    = "1.10.0"
+    values           = "${file("values.yaml")}"
+    set              = []
   }
-
 }
 
 terraform {
