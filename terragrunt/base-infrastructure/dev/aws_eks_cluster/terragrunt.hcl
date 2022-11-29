@@ -136,7 +136,7 @@ inputs = {
 
         capacity_type        = "SPOT"
         force_update_version = true
-        instance_types       = ["t3.small"]
+        instance_types       = ["t3.micro"]
 
         labels = {
           NodeTypeClass = "appops"
