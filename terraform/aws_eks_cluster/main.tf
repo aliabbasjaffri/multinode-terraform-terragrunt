@@ -68,9 +68,9 @@ module "eks" {
   # Extend node-to-node security group rules
   node_security_group_additional_rules = var.aws_eks_cluster.node_security_group_additional_rules
 
-  # eks_managed_node_group_defaults = {
-  #   iam_role_attach_cni_policy = true
-  # }
+  eks_managed_node_group_defaults = {
+    iam_role_attach_cni_policy = true
+  }
 
   eks_managed_node_groups = var.aws_eks_cluster.eks_managed_node_groups
 
